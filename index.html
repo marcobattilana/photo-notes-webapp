@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <title>Photo Notes Web App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Photo Notes</h1>
+  <button id="captureBtn">Scatta Foto</button>
+  <input type="file" accept="image/*" capture="environment" id="cameraInput" style="display:none">
+  <img id="preview" style="max-width:100%; margin-top:20px;">
+  <textarea id="description" placeholder="Detta o scrivi una descrizione..."></textarea>
+  <button id="saveBtn">Salva</button>
+  <script src="app.js"></script>
+</body>
+</html>
