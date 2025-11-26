@@ -1,3 +1,72 @@
-body { font-family: sans-serif; padding: 20px; }
-button { padding: 10px 20px; margin: 10px 0; font-size: 18px; }
-textarea { width: 100%; height: 120px; margin-top: 10px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  padding: 15px;
+  background: #f7f7f7;
+}
+
+header h1 {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  background: #007aff;
+  color: white;
+  margin-bottom: 15px;
+}
+
+textarea {
+  width: 100%;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  margin-top: 10px;
+  min-height: 90px;
+}
+
+.preview {
+  width: 100%;
+  border-radius: 12px;
+  margin: 15px 0;
+  display: none;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.photoCard {
+  background: white;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.photoCard img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.photoCard p {
+  font-size: 14px;
+}
+
+.deleteBtn {
+  background: #ff3b30;
+  margin-top: 8px;
+}
+
+.downloadBtn {
+  background: #34c759;
+  margin-top: 5px;
+}
