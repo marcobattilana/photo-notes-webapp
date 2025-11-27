@@ -1,132 +1,132 @@
-/* ============================
-   INIZIO: SimpleZip (mini zip)
-   ============================ */
-class SimpleZip {
-  constructor() { this.files = {}; }
-  file(name, content) { this.files[name] = content; }
-  async generateAsync() {
-    function toUint8ArrayFromDataURL(dataURL) {
-      const base64 = dataURL.split(",")[1];
-      const raw = atob(base64);
-      const arr = new Uint8Array(raw.length);
-      for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-      return arr;
+// -------------------------------------------
+// PHOTO NOTES - APP.JS (con pulsante ELIMINA TUTTO)
+// -------------------------------------------
+
+// Carica galleria al caricamento pagina
+document.addEventListener("DOMContentLoaded", loadGallery);
+
+// Elementi
+const video = document.getElementById("camera");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let stream = null;
+let lastPhotoData = null;
+
+// Avvia fotocamera
+document.getElementById("startCamera").addEventListener("click", async () => {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.play();
+    } catch (err) {
+        alert("Errore nell’avviare la fotocamera");
+        console.error(err);
     }
-    let parts = [];
-    for (const name in this.files) {
-      const file = this.files[name];
-      if (typeof file === "string" && file.startsWith("data:image")) {
-        parts.push({ name, content: toUint8ArrayFromDataURL(file) });
-      } else if (typeof file === "string") {
-        parts.push({ name, content: new TextEncoder().encode(file) });
-      }
-    }
-    return parts;
-  }
-}
-/* ============================ */
-
-const camInput = document.getElementById("cameraInput");
-const takeBtn = document.getElementById("takePhotoBtn");
-const preview = document.getElementById("preview");
-const descInput = document.getElementById("description");
-const saveBtn = document.getElementById("saveBtn");
-const galleryDiv = document.getElementById("gallery");
-
-takeBtn.addEventListener("click", () => camInput.click());
-
-camInput.addEventListener("change", e => {
-  camInput.value = "";
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => { preview.src = reader.result; preview.style.display="block"; };
-  reader.readAsDataURL(file);
 });
 
-saveBtn.addEventListener("click", () => {
-  const img = preview.src;
-  const desc = descInput.value.trim();
-  if (!img || img.length < 50) {
-    alert("Scatta una foto prima di salvare!");
-    return;
-  }
-  const item = { id: Date.now(), img, desc, date: new Date().toLocaleString() };
-  const notes = JSON.parse(localStorage.getItem("photoNotes")||"[]");
-  notes.push(item);
-  localStorage.setItem("photoNotes", JSON.stringify(notes));
-  preview.style.display="none"; preview.src=""; descInput.value=""; camInput.value="";
-  loadGallery();
+// Scatta foto
+document.getElementById("takePhoto").addEventListener("click", () => {
+    if (!stream) {
+        alert("Avvia prima la fotocamera");
+        return;
+    }
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    lastPhotoData = canvas.toDataURL("image/jpeg");
+    document.getElementById("preview").src = lastPhotoData;
 });
 
-function loadGallery(){
-  const notes = JSON.parse(localStorage.getItem("photoNotes")||"[]");
-  galleryDiv.innerHTML = "";
-  notes.forEach(note=>{
-    const div = document.createElement("div");
-    div.className = "photoCard";
-    div.innerHTML = `
-      <img src="${note.img}">
-      <p>${note.desc || "(senza descrizione)"}<br><small>${note.date}</small></p>
-      <button class="downloadBtn" onclick="downloadNote(${note.id})">⬇️ Scarica</button>
-      <button class="deleteBtn" onclick="deleteNote(${note.id})">🗑 Elimina</button>`;
-    galleryDiv.appendChild(div);
-  });
-  addExportAllButton();
+// Salva foto + descrizione
+document.getElementById("savePhoto").addEventListener("click", () => {
+    const descr = document.getElementById("description").value.trim();
+    if (!lastPhotoData) {
+        alert("Scatta prima una foto!");
+        return;
+    }
+    if (!descr) {
+        alert("Scrivi una descrizione!");
+        return;
+    }
+
+    const id = "photo_" + Date.now();
+    const date = new Date().toLocaleString();
+
+    const item = {
+        id: id,
+        img: lastPhotoData,
+        descr: descr,
+        date: date
+    };
+
+    let gallery = JSON.parse(localStorage.getItem("gallery") || "[]");
+    gallery.push(item);
+    localStorage.setItem("gallery", JSON.stringify(gallery));
+
+    // pulizia UI
+    document.getElementById("description").value = "";
+    document.getElementById("preview").src = "";
+    lastPhotoData = null;
+
+    loadGallery();
+    alert("Foto salvata!");
+});
+
+// Carica e mostra galleria
+function loadGallery() {
+    const gallery = JSON.parse(localStorage.getItem("gallery") || "[]");
+    const container = document.getElementById("gallery");
+
+    container.innerHTML = "";
+
+    gallery.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+            <img src="${item.img}" class="thumb">
+            <div class="title">${item.descr}</div>
+            <div class="date">${item.date}</div>
+            <button class="download" onclick="downloadPhoto('${item.id}')">⬇️ Scarica</button>
+            <button class="delete" onclick="deletePhoto('${item.id}')">🗑️ Elimina</button>
+        `;
+        container.appendChild(card);
+    });
 }
 
-function deleteNote(id){
-  let notes = JSON.parse(localStorage.getItem("photoNotes")||"[]");
-  notes = notes.filter(n => n.id !== id);
-  localStorage.setItem("photoNotes", JSON.stringify(notes));
-  loadGallery();
+// Elimina singola foto
+function deletePhoto(id) {
+    let gallery = JSON.parse(localStorage.getItem("gallery") || "[]");
+    gallery = gallery.filter(item => item.id !== id);
+    localStorage.setItem("gallery", JSON.stringify(gallery));
+    loadGallery();
 }
 
-function downloadNote(id){
-  const notes = JSON.parse(localStorage.getItem("photoNotes")||"[]");
-  const item = notes.find(n => n.id === id);
-  const blob = new Blob([JSON.stringify(item,null,2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `note-${id}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+// Download singola foto
+function downloadPhoto(id) {
+    const gallery = JSON.parse(localStorage.getItem("gallery") || "[]");
+    const item = gallery.find(el => el.id === id);
+
+    if (!item) return;
+
+    const a = document.createElement("a");
+    a.href = item.img;
+    a.download = item.descr.replace(/[^a-z0-9]/gi, "_") + ".jpg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
-function addExportAllButton(){
-  if (!document.getElementById("exportAllBtn")) {
-    const btn = document.createElement("button");
-    btn.id = "exportAllBtn";
-    btn.className = "downloadBtn";
-    btn.innerText = "📦 Esporta Galleria (ZIP)";
-    btn.style.marginTop = "20px";
-    btn.onclick = exportAllZip;
-    galleryDiv.parentElement.appendChild(btn);
-  }
-}
+// -------------------------------------------
+// 🔥 NUOVO PULSANTE: ELIMINA TUTTO
+// -------------------------------------------
 
-async function exportAllZip(){
-  const notes = JSON.parse(localStorage.getItem("photoNotes")||"[]");
-  if (notes.length === 0) {
-    alert("Nessuna foto salvata!");
-    return;
-  }
-  const zip = new SimpleZip();
-  let metadata = [];
-  notes.forEach(note=>{
-    zip.file(`photo-${note.id}.png`, note.img);
-    metadata.push({ id: note.id, desc: note.desc, date: note.date, file: `photo-${note.id}.png` });
-  });
-  zip.file("metadata.json", JSON.stringify(metadata,null,2));
-  const parts = await zip.generateAsync();
-  const blob = new Blob(parts.map(p=>p.content), {type:"application/zip"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "photo-notes.zip";
-  a.click();
-  URL.revokeObjectURL(url);
-}
+document.getElementById("deleteAll").addEventListener("click", () => {
+    if (confirm("Sei sicuro di voler eliminare TUTTE le foto e descrizioni? L’azione è irreversibile.")) {
+        localStorage.removeItem("gallery");
+        loadGallery();
+        alert("Tutta la galleria è stata eliminata!");
+    }
+});
 
-loadGallery();
